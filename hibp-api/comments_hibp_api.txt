@@ -9,3 +9,10 @@
 
 # Work to do:
 # rewrite the feedback to the user
+
+
+# Example:
+# the password "mypassword" has the following hash: 91DFD9DDB4198AFFC5C194CD8CE6D338FDE470E2
+# website sends 91DFD prefix to the api and gets a response with 1300 responsens.
+# the suffix 9DDB4198AFFC5C194CD8CE6D338FDE470E2 is found in the response with a total of 120351 found
+# this result is presented to the user
