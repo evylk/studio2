@@ -1,0 +1,11 @@
+# How the API works:
+# - Creates a Sha1 hash of the users entered password
+# - Slices the hash and sends the 5 first characters (prefix) to the API
+# - API returns all found suffixes
+# - Browser checks if the suffix is found in the response
+#   - If suffix is found, returns amount times that password has been seen
+#   - If suffix is not found, returns information that password was not seen in breaches
+
+
+# Work to do:
+# rewrite the feedback to the user
