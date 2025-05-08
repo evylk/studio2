@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PassPOWER</title>
+  <script src="https://cdn.jsdelivr.net/npm/zxcvbn@4.4.2/dist/zxcvbn.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 700px;
+      margin: 2rem auto;
+      text-align: center;
+      line-height: 1.6;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      margin: 1rem 0.5rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+    }
+    #strengthBadge {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      border-radius: 12px;
+      color: white;
+      font-weight: bold;
+    }
+    .green { background-color: #28a745; }
+    .yellow { background-color: #ffc107; color: black; }
+    .red { background-color: #dc3545; }
+    .hidden { display: none; }
+    #imageResult img {
+      max-width: 100%;
+      margin-top: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    figcaption {
+      margin-top: 0.5rem;
+      font-style: italic;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>PassPOWER</h1>
+  <h2>Creating Secure and Memorable Passwords</h2>
+
+  <div id="startBlock">
+    <button onclick="generatePassphrase()">Generate a Password</button>
+  </div>
+
+  <div id="passphraseBlock" class="hidden">
+    <h2>Your Generated Passphrase:</h2>
+    <p><strong><span id="passphrase"></span></strong></p>
+    <p>Strength: <span id="strengthBadge"></span></p>
+    <div id="strengthDetail"></div>
+    <button onclick="generatePassphrase()">Try Another</button>
+    <button onclick="confirmPassphrase()">Let's Use This One</button>
+  </div>
+
+  <div id="educationBlock" class="hidden">
+    <h3>Scene Preview</h3>
+    <p><em id="sceneDescription"></em></p>
+    <button onclick="showImage()">I'm Ready — Show Me</button>
+  </div>
+
+  <div id="imageBlock" class="hidden">
+    <h2>Your Passphrase Image</h2>
+    <div id="imageResult">
+      <figure>
+        <img id="resultImage" src="" alt="Passphrase scene">
+        <figcaption id="captionBelowImage"></figcaption>
+      </figure>
+    </div>
+    <a id="downloadBtn" href="#" download="passphrase-image.png">Download Image</a>
+  </div>
+
+  <script>
+    let currentPassphrase = "";
+    let imageUrl = null;
+    let currentScene = "";
+
+    function generatePassphrase() {
+      fetch("/generate-passphrase", {
+        method: "POST"
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.passphrase) {
+          currentPassphrase = data.passphrase;
+          displayPassphrase(data.passphrase);
+        } else {
+          alert("Something went wrong generating the passphrase.");
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch passphrase:", err);
+        alert("There was an error generating the passphrase.");
+      });
+    }
+
+    function displayPassphrase(phrase) {
+      document.getElementById("passphrase").textContent = phrase;
+
+      const score = zxcvbn(phrase).score;
+      const badge = document.getElementById("strengthBadge");
+      badge.textContent = ["Very weak", "Weak", "Moderate", "Strong", "Very strong"][score];
+      badge.className = score === 4 ? "green" : score === 3 ? "yellow" : "red";
+
+      document.getElementById("strengthDetail").textContent =
+        score >= 3
+          ? "✅ Great! This passphrase is strong and not found in any leaked datasets."
+          : "⚠️ This passphrase might be too weak. Try again.";
+
+      document.getElementById("startBlock").classList.add("hidden");
+      document.getElementById("passphraseBlock").classList.remove("hidden");
+    }
+
+    function confirmPassphrase() {
+      fetch("/scene", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passphrase: currentPassphrase })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const sceneDescription = data.scene || "Scene description could not be generated.";
+        currentScene = data.scene || "Scene description could not be generated.";
+        document.getElementById("sceneDescription").textContent = sceneDescription;
+        document.getElementById("educationBlock").classList.remove("hidden");
+        console.log("Scene received from /scene:", currentScene);
+      });
+    }
+
+    function showImage() {
+      if (!currentScene) {
+        alert("Scene description not ready yet.");
+        return;
+      }
+
+      fetch("/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scene: currentScene })  // <--- This must NOT be undefined
+      })
+      .then(res => res.json())
+      .then(data => {
+        imageUrl = data.url || null;
+        if (imageUrl) {
+          document.getElementById("imageBlock").classList.remove("hidden");
+          document.getElementById("resultImage").src = imageUrl;
+          document.getElementById("captionBelowImage").textContent = currentScene;
+          document.getElementById("downloadBtn").href = imageUrl;
+        } else {
+          alert("Failed to generate image.");
+          
+        }
+        console.log("Sending scene to /image:", currentScene);
+      });
+    }
+  </script>
+
+</body>
+</html>
