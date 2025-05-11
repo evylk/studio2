@@ -16,7 +16,7 @@ $env:OPENAI_API_KEY = YOUR_KEY_HERE
 
 python passpower_CHAT.py
 
-4. Open your browser and go to:
+Open your browser and go to:
    
 http://localhost:5000
 
